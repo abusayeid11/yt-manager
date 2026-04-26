@@ -104,8 +104,24 @@ export default function Home() {
       currentText += snippet.text;
       lastEndedWithSentence = isSentenceEnd(snippet.text);
 
-      // Check forced split at 80%
-      if (startSec >= windowEnd + dur * 0.8 && currentText) {
+      // Check forced split at 80% relative to current window start
+      const forcedSplitThreshold = currentStart + dur * 0.8;
+      if (startSec >= forcedSplitThreshold && currentText) {
+        newSegments.push({
+          startTime: formatTime(currentStart),
+          start: currentStart,
+          end: windowEnd,
+          text: currentText.trim()
+        });
+        
+        currentStart = windowEnd;
+        windowEnd = currentStart + dur;
+        currentText = "";
+        lastEndedWithSentence = false;
+      }
+
+      // Handle large gaps: advance window in loop until it contains the snippet start
+      while (startSec >= windowEnd && currentText) {
         newSegments.push({
           startTime: formatTime(currentStart),
           start: currentStart,

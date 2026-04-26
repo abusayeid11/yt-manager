@@ -204,8 +204,25 @@ processBuilder.environment().putAll(env);
             currentText.append(text);
             lastEndedWithSentence = isSentenceEnd(text);
 
-            // Check forced split at 80%
-            if (start >= windowEnd + segmentDurationSeconds * 0.8 && currentText.length() > 0) {
+            // Check forced split at 80% relative to current window start
+            double forcedSplitThreshold = currentWindowStart + segmentDurationSeconds * 0.8;
+            if (start >= forcedSplitThreshold && currentText.length() > 0) {
+                TranscriptSegment segment = new TranscriptSegment(
+                    formatTime(currentWindowStart),
+                    currentWindowStart,
+                    windowEnd,
+                    currentText.toString().trim()
+                );
+                segments.add(segment);
+                
+                currentWindowStart = windowEnd;
+                windowEnd = currentWindowStart + segmentDurationSeconds;
+                currentText = new StringBuilder();
+                lastEndedWithSentence = false;
+            }
+
+            // Handle large gaps: advance window in loop until it contains the snippet start
+            while (start >= windowEnd && currentText.length() > 0) {
                 TranscriptSegment segment = new TranscriptSegment(
                     formatTime(currentWindowStart),
                     currentWindowStart,
