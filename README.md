@@ -71,18 +71,57 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 
 ```json
 {
-  "url": "https://www.youtube.com/watch?v=VIDEO_ID"
+  "url": "https://www.youtube.com/watch?v=VIDEO_ID",
+  "segmentationType": "TIMESTAMP",
+  "segmentDuration": 60
 }
 ```
+
+**Request Fields:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `url` | string | Yes | YouTube URL or video ID |
+| `segmentationType` | string | No | Set to `"TIMESTAMP"` to enable segmentation |
+| `segmentDuration` | integer | No | Segment length in seconds (`30`, `60`, or `90`). Default: `60` |
 
 ### Response
 
 ```json
 {
   "videoId": "VIDEO_ID",
-  "transcript": "Full transcript text..."
+  "rawText": "Full transcript text...",
+  "snippets": [
+    {"startTime": "0:00", "start": 0.0, "text": "Hello everyone..."},
+    {"startTime": "0:05", "start": 5.0, "text": "Welcome to this video..."}
+  ],
+  "segments": [
+    {"startTime": "0:00", "start": 0.0, "end": 60.0, "text": "Hello everyone... Welcome to this video..."}
+  ]
 }
 ```
+
+**Response Fields:**
+| Field | Type | Description |
+|-------|------|-------------|
+| `videoId` | string | YouTube video ID |
+| `rawText` | string | Full transcript as plain text |
+| `snippets` | array | Individual transcript segments with timestamps (always included) |
+| `segments` | array | Grouped segments (included when `segmentationType` is `"TIMESTAMP"`) |
+
+**Snippet Fields:**
+| Field | Type | Description |
+|-------|------|-------------|
+| `startTime` | string | Formatted time (e.g., `"0:05"`) |
+| `start` | double | Start time in seconds |
+| `text` | string | Transcript text |
+
+**Segment Fields:**
+| Field | Type | Description |
+|-------|------|-------------|
+| `startTime` | string | Formatted start time |
+| `start` | double | Start time in seconds |
+| `end` | double | End time in seconds |
+| `text` | string | Grouped transcript text |
 
 ## Tech Stack
 
