@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
@@ -68,46 +69,53 @@ public class TranscriptService {
             scriptPath.toString(),
             url
         );
-        processBuilder.environment().putAll(env);
+processBuilder.environment().putAll(env);
         processBuilder.redirectErrorStream(true);
         
         logger.info("Starting process...");
         Process process = processBuilder.start();
-
-        StringBuilder output = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                output.append(line).append("\n");
+        
+        // Use CompletableFuture to wait for process with timeout
+        CompletableFuture<Process> futureProcess = process.onExit().toCompletableFuture();
+        
+        try {
+            // Wait for completion with timeout
+            Process completedProcess = futureProcess.get(PROCESS_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            int exitCode = completedProcess.exitValue();
+            
+            logger.info("Process completed with exit code: {}", exitCode);
+            
+            // Now read the output
+            StringBuilder output = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    output.append(line).append("\n");
+                }
             }
-        }
-
-        int exitCode;
-        boolean completed = process.waitFor(PROCESS_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        if (!completed) {
+            
+            logger.info("Python output length: {}", output.toString().length());
+            
+            if (exitCode != 0) {
+                String errorOutput = output.toString().trim();
+                logger.error("Error output: {}", errorOutput);
+                if (errorOutput.contains("Transcripts are disabled")) {
+                    throw new RuntimeException("Transcripts are disabled for this video");
+                } else if (errorOutput.contains("No transcript available")) {
+                    throw new RuntimeException("No transcript available for this video");
+                }
+                throw new RuntimeException(errorOutput.isEmpty() ? "Failed to execute scraper" : errorOutput);
+            }
+            
+            logger.info("=== END DEBUG ===");
+            return output.toString().trim();
+            
+        } catch (java.util.concurrent.TimeoutException e) {
             logger.error("Process timed out after {} seconds", PROCESS_TIMEOUT_SECONDS);
             process.destroyForcibly();
             throw new RuntimeException("Scraper timed out after " + PROCESS_TIMEOUT_SECONDS + " seconds");
         }
-        exitCode = process.exitValue();
-        
-        logger.info("Exit code: {}", exitCode);
-        logger.info("Python output length: {}", output.toString().length());
-        
-        if (exitCode != 0) {
-            String errorOutput = output.toString().trim();
-            logger.error("Error output: {}", errorOutput);
-            if (errorOutput.contains("Transcripts are disabled")) {
-                throw new RuntimeException("Transcripts are disabled for this video");
-            } else if (errorOutput.contains("No transcript available")) {
-                throw new RuntimeException("No transcript available for this video");
-            }
-            throw new RuntimeException(errorOutput.isEmpty() ? "Failed to execute scraper" : errorOutput);
-        }
-
-        logger.info("=== END DEBUG ===");
-        return output.toString().trim();
     }
 
     public List<Map<String, Object>> parseTranscriptJson(String jsonResponse) throws Exception {
