@@ -25,7 +25,7 @@ public class TranscriptService {
 
     private static final Logger logger = LoggerFactory.getLogger(TranscriptService.class);
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private static final Pattern SENTENCE_END = Pattern.compile("[.!?]+\\s*");
+    private static final Pattern SENTENCE_END = Pattern.compile("[.!?]+\\s*$");
 
     public String executeScraper(String url) throws Exception {
         String projectRoot = System.getenv("PROJECT_ROOT");
