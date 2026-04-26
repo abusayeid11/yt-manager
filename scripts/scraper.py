@@ -55,9 +55,13 @@ def main():
         print("Usage: python scraper.py <YouTube_URL_or_Video_ID>", file=sys.stderr)
         sys.exit(1)
 
-    input_str = sys.argv[1]
-    transcript_json = get_transcript_json(input_str)
-    print(transcript_json)
+    try:
+        input_str = sys.argv[1]
+        transcript_json = get_transcript_json(input_str)
+        print(transcript_json)
+    except ValueError as e:
+        print(f"ERROR: {str(e)}", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
