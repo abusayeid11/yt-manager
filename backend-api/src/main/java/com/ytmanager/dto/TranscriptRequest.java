@@ -7,12 +7,31 @@ public class TranscriptRequest {
 
     public TranscriptRequest() {}
 
-    public String getUrl() { return url; }
-    public void setUrl(String url) { this.url = url; }
+    public TranscriptRequest(String url) {
+        this.url = url;
+    }
 
-    public String getSegmentationType() { return segmentationType; }
-    public void setSegmentationType(String segmentationType) { this.segmentationType = segmentationType; }
+    public String getUrl() {
+        return url;
+    }
 
-    public Integer getSegmentDuration() { return segmentDuration; }
-    public void setSegmentDuration(Integer segmentDuration) { this.segmentDuration = segmentDuration; }
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getSegmentationType() {
+        return segmentationType;
+    }
+
+    public void setSegmentationType(String segmentationType) {
+        this.segmentationType = segmentationType;
+    }
+
+    public Integer getSegmentDuration() {
+        return segmentDuration;
+    }
+
+    public void setSegmentDuration(Integer segmentDuration) {
+        this.segmentDuration = segmentDuration;
+    }
 }

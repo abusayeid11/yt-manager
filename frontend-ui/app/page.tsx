@@ -45,7 +45,9 @@ export default function Home() {
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to fetch transcript");
+      if (!response.ok) {
+        throw new Error("Failed to fetch transcript");
+      }
 
       const data = await response.json();
       setTranscript(data.rawText || "");
@@ -165,7 +167,9 @@ export default function Home() {
           </button>
         </form>
 
-        {error && <p className="text-red-600 text-center mb-4">{error}</p>}
+        {error && (
+          <p className="text-red-600 text-center mb-4">{error}</p>
+        )}
 
         {(transcript || segments.length > 0) && (
           <div className="bg-white rounded-lg shadow-md p-6">
@@ -186,7 +190,10 @@ export default function Home() {
                   <option value={90}>90s</option>
                 </select>
               </div>
-              <button onClick={copyToClipboard} className="px-3 py-1 text-sm text-zinc-600 hover:text-zinc-900">
+              <button
+                onClick={copyToClipboard}
+                className="px-3 py-1 text-sm text-zinc-600 hover:text-zinc-900"
+              >
                 Copy All
               </button>
             </div>

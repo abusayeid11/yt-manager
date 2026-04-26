@@ -15,15 +15,35 @@ public class TranscriptSegment {
         this.text = text;
     }
 
-    public String getStartTime() { return startTime; }
-    public void setStartTime(String startTime) { this.startTime = startTime; }
+    public String getStartTime() {
+        return startTime;
+    }
 
-    public Double getStart() { return start; }
-    public void setStart(Double start) { this.start = start; }
+    public void setStartTime(String startTime) {
+        this.startTime = startTime;
+    }
 
-    public Double getEnd() { return end; }
-    public void setEnd(Double end) { this.end = end; }
+    public Double getStart() {
+        return start;
+    }
 
-    public String getText() { return text; }
-    public void setText(String text) { this.text = text; }
+    public void setStart(Double start) {
+        this.start = start;
+    }
+
+    public Double getEnd() {
+        return end;
+    }
+
+    public void setEnd(Double end) {
+        this.end = end;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
 }

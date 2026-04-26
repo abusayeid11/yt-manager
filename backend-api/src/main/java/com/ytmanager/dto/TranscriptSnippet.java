@@ -13,12 +13,27 @@ public class TranscriptSnippet {
         this.text = text;
     }
 
-    public String getStartTime() { return startTime; }
-    public void setStartTime(String startTime) { this.startTime = startTime; }
+    public String getStartTime() {
+        return startTime;
+    }
 
-    public Double getStart() { return start; }
-    public void setStart(Double start) { this.start = start; }
+    public void setStartTime(String startTime) {
+        this.startTime = startTime;
+    }
 
-    public String getText() { return text; }
-    public void setText(String text) { this.text = text; }
+    public Double getStart() {
+        return start;
+    }
+
+    public void setStart(Double start) {
+        this.start = start;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
 }

@@ -10,9 +10,10 @@ public class TranscriptResponse {
 
     public TranscriptResponse() {}
 
-    public TranscriptResponse(String videoId, String rawText) {
+    public TranscriptResponse(String videoId, String rawText, List<TranscriptSnippet> snippets) {
         this.videoId = videoId;
         this.rawText = rawText;
+        this.snippets = snippets;
     }
 
     public TranscriptResponse(String videoId, String rawText, List<TranscriptSnippet> snippets, List<TranscriptSegment> segments) {
@@ -22,15 +23,35 @@ public class TranscriptResponse {
         this.segments = segments;
     }
 
-    public String getVideoId() { return videoId; }
-    public void setVideoId(String videoId) { this.videoId = videoId; }
+    public String getVideoId() {
+        return videoId;
+    }
 
-    public String getRawText() { return rawText; }
-    public void setRawText(String rawText) { this.rawText = rawText; }
+    public void setVideoId(String videoId) {
+        this.videoId = videoId;
+    }
 
-    public List<TranscriptSnippet> getSnippets() { return snippets; }
-    public void setSnippets(List<TranscriptSnippet> snippets) { this.snippets = snippets; }
+    public String getRawText() {
+        return rawText;
+    }
 
-    public List<TranscriptSegment> getSegments() { return segments; }
-    public void setSegments(List<TranscriptSegment> segments) { this.segments = segments; }
+    public void setRawText(String rawText) {
+        this.rawText = rawText;
+    }
+
+    public List<TranscriptSnippet> getSnippets() {
+        return snippets;
+    }
+
+    public void setSnippets(List<TranscriptSnippet> snippets) {
+        this.snippets = snippets;
+    }
+
+    public List<TranscriptSegment> getSegments() {
+        return segments;
+    }
+
+    public void setSegments(List<TranscriptSegment> segments) {
+        this.segments = segments;
+    }
 }
