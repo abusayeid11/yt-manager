@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
@@ -25,7 +26,8 @@ public class TranscriptService {
 
     private static final Logger logger = LoggerFactory.getLogger(TranscriptService.class);
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private static final Pattern SENTENCE_END = Pattern.compile("[.!?]+\\s*$");
+    private static final Pattern SENTENCE_END = Pattern.compile("[.!?]+\s*$");
+    private static final int PROCESS_TIMEOUT_SECONDS = 30;
 
     public String executeScraper(String url) throws Exception {
         String projectRoot = System.getenv("PROJECT_ROOT");
@@ -81,7 +83,15 @@ public class TranscriptService {
             }
         }
 
-        int exitCode = process.waitFor();
+        int exitCode;
+        boolean completed = process.waitFor(PROCESS_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        if (!completed) {
+            logger.error("Process timed out after {} seconds", PROCESS_TIMEOUT_SECONDS);
+            process.destroyForcibly();
+            throw new RuntimeException("Scraper timed out after " + PROCESS_TIMEOUT_SECONDS + " seconds");
+        }
+        exitCode = process.exitValue();
+        
         logger.info("Exit code: {}", exitCode);
         logger.info("Python output length: {}", output.toString().length());
         
