@@ -27,7 +27,7 @@ public class TranscriptService {
 
     private static final Logger logger = LoggerFactory.getLogger(TranscriptService.class);
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private static final Pattern SENTENCE_END = Pattern.compile("[.!?]+\s*$");
+    private static final Pattern SENTENCE_END = Pattern.compile("[.!?]+\\s*$");
     private static final int PROCESS_TIMEOUT_SECONDS = 30;
 
     public String executeScraper(String url) throws Exception {
