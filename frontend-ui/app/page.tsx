@@ -84,16 +84,13 @@ export default function Home() {
     for (const snippet of snippets) {
       const startSec = snippet.start;
 
-      if (currentText) currentText += " ";
-      currentText += snippet.text;
-      lastEndedWithSentence = isSentenceEnd(snippet.text);
-
-      if (startSec >= windowEnd && (lastEndedWithSentence || startSec >= windowEnd + dur * 0.5)) {
+      // Check boundary BEFORE appending current snippet
+      if (startSec >= windowEnd && currentText) {
         newSegments.push({
           startTime: formatTime(currentStart),
           start: currentStart,
           end: windowEnd,
-          text: currentText.toString().trim()
+          text: currentText.trim()
         });
         
         currentStart = windowEnd;
@@ -102,12 +99,18 @@ export default function Home() {
         lastEndedWithSentence = false;
       }
 
+      // Only append if we didn't split above
+      if (currentText) currentText += " ";
+      currentText += snippet.text;
+      lastEndedWithSentence = isSentenceEnd(snippet.text);
+
+      // Check forced split at 80%
       if (startSec >= windowEnd + dur * 0.8 && currentText) {
         newSegments.push({
           startTime: formatTime(currentStart),
           start: currentStart,
           end: windowEnd,
-          text: currentText.toString().trim()
+          text: currentText.trim()
         });
         
         currentStart = windowEnd;
@@ -122,7 +125,7 @@ export default function Home() {
         startTime: formatTime(currentStart),
         start: currentStart,
         end: windowEnd,
-        text: currentText.toString().trim()
+        text: currentText.trim()
       });
     }
 

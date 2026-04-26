@@ -163,13 +163,8 @@ public class TranscriptService {
             double start = (Double) snippet.get("start");
             String text = (String) snippet.get("text");
 
-            if (currentText.length() > 0) {
-                currentText.append(" ");
-            }
-            currentText.append(text);
-            lastEndedWithSentence = isSentenceEnd(text);
-
-            if (start >= windowEnd && (lastEndedWithSentence || start >= windowEnd + segmentDurationSeconds * 0.5)) {
+            // Check boundary BEFORE appending current snippet
+            if (start >= windowEnd && currentText.length() > 0) {
                 TranscriptSegment segment = new TranscriptSegment(
                     formatTime(currentWindowStart),
                     currentWindowStart,
@@ -184,6 +179,14 @@ public class TranscriptService {
                 lastEndedWithSentence = false;
             }
 
+            // Only append if we didn't split above
+            if (currentText.length() > 0) {
+                currentText.append(" ");
+            }
+            currentText.append(text);
+            lastEndedWithSentence = isSentenceEnd(text);
+
+            // Check forced split at 80%
             if (start >= windowEnd + segmentDurationSeconds * 0.8 && currentText.length() > 0) {
                 TranscriptSegment segment = new TranscriptSegment(
                     formatTime(currentWindowStart),
