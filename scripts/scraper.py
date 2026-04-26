@@ -29,8 +29,8 @@ def get_transcript_json(input_str: str) -> str:
         print("ERROR: Transcripts are disabled for this video", file=sys.stderr)
         sys.exit(1)
     except NoTranscriptFound:
-        print("ERROR: Transcripts are disabled for this video", file=sys.stderr)
-        sys.exit(1)
+        print("ERROR: No transcript available for this video", file=sys.stderr)
+        sys.exit(2)
     except Exception as e:
         print(f"ERROR: {str(e)}", file=sys.stderr)
         sys.exit(1)

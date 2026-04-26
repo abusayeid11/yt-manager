@@ -90,6 +90,8 @@ public class TranscriptService {
             logger.error("Error output: {}", errorOutput);
             if (errorOutput.contains("Transcripts are disabled")) {
                 throw new RuntimeException("Transcripts are disabled for this video");
+            } else if (errorOutput.contains("No transcript available")) {
+                throw new RuntimeException("No transcript available for this video");
             }
             throw new RuntimeException(errorOutput.isEmpty() ? "Failed to execute scraper" : errorOutput);
         }
