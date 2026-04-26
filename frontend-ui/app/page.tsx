@@ -15,6 +15,17 @@ interface TranscriptSegment {
   text: string;
 }
 
+const SENTENCE_END = /[.!?]+\s*$/;
+
+const isSentenceEnd = (text: string): boolean => {
+  if (!text) return false;
+  const trimmed = text.trim();
+  return SENTENCE_END.test(trimmed) || 
+         trimmed.endsWith(".") || 
+         trimmed.endsWith("!") || 
+         trimmed.endsWith("?");
+};
+
 export default function Home() {
   const [url, setUrl] = useState("");
   const [transcript, setTranscript] = useState("");
@@ -68,53 +79,41 @@ export default function Home() {
     let currentStart = 0;
     let currentText = "";
     let windowEnd = dur;
+    let lastEndedWithSentence = false;
 
     for (const snippet of snippets) {
       const startSec = snippet.start;
 
-      if (startSec >= windowEnd && currentText) {
-        const lastPunctuation = Math.max(
-          currentText.lastIndexOf("."),
-          currentText.lastIndexOf("!"),
-          currentText.lastIndexOf("?")
-        );
-
-        if (lastPunctuation > currentText.length * 0.3) {
-          const endIdx = lastPunctuation + 1;
-          newSegments.push({
-            startTime: formatTime(currentStart),
-            start: currentStart,
-            end: windowEnd,
-            text: currentText.substring(0, endIdx).trim()
-          });
-          currentText = currentText.substring(endIdx).trim();
-        } else {
-          newSegments.push({
-            startTime: formatTime(currentStart),
-            start: currentStart,
-            end: windowEnd,
-            text: currentText.trim()
-          });
-          currentText = "";
-        }
-
-        currentStart = windowEnd;
-        windowEnd = currentStart + dur;
-      }
-
       if (currentText) currentText += " ";
       currentText += snippet.text;
+      lastEndedWithSentence = isSentenceEnd(snippet.text);
 
-      if (startSec >= windowEnd + dur * 0.8) {
+      if (startSec >= windowEnd && (lastEndedWithSentence || startSec >= windowEnd + dur * 0.5)) {
         newSegments.push({
           startTime: formatTime(currentStart),
           start: currentStart,
           end: windowEnd,
-          text: currentText.trim()
+          text: currentText.toString().trim()
         });
-        currentText = "";
+        
         currentStart = windowEnd;
         windowEnd = currentStart + dur;
+        currentText = "";
+        lastEndedWithSentence = false;
+      }
+
+      if (startSec >= windowEnd + dur * 0.8 && currentText) {
+        newSegments.push({
+          startTime: formatTime(currentStart),
+          start: currentStart,
+          end: windowEnd,
+          text: currentText.toString().trim()
+        });
+        
+        currentStart = windowEnd;
+        windowEnd = currentStart + dur;
+        currentText = "";
+        lastEndedWithSentence = false;
       }
     }
 
@@ -123,7 +122,7 @@ export default function Home() {
         startTime: formatTime(currentStart),
         start: currentStart,
         end: windowEnd,
-        text: currentText.trim()
+        text: currentText.toString().trim()
       });
     }
 
