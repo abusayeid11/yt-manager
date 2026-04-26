@@ -86,17 +86,24 @@ export default function Home() {
 
       // Check boundary BEFORE appending current snippet
       if (startSec >= windowEnd && currentText) {
-        newSegments.push({
-          startTime: formatTime(currentStart),
-          start: currentStart,
-          end: windowEnd,
-          text: currentText.trim()
-        });
-        
-        currentStart = windowEnd;
-        windowEnd = currentStart + dur;
-        currentText = "";
-        lastEndedWithSentence = false;
+        // If last ended with sentence, allow extension up to 50% past boundary
+        const extensionLimit = windowEnd + dur * 0.5;
+        if (lastEndedWithSentence && startSec < extensionLimit) {
+          // Extend - keep accumulating text
+        } else {
+          // Emit segment
+          newSegments.push({
+            startTime: formatTime(currentStart),
+            start: currentStart,
+            end: windowEnd,
+            text: currentText.trim()
+          });
+          
+          currentStart = windowEnd;
+          windowEnd = currentStart + dur;
+          currentText = "";
+          lastEndedWithSentence = false;
+        }
       }
 
       // Only append if we didn't split above

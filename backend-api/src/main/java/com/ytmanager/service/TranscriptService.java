@@ -183,18 +183,25 @@ processBuilder.environment().putAll(env);
 
             // Check boundary BEFORE appending current snippet
             if (start >= windowEnd && currentText.length() > 0) {
-                TranscriptSegment segment = new TranscriptSegment(
-                    formatTime(currentWindowStart),
-                    currentWindowStart,
-                    windowEnd,
-                    currentText.toString().trim()
-                );
-                segments.add(segment);
-                
-                currentWindowStart = windowEnd;
-                windowEnd = currentWindowStart + segmentDurationSeconds;
-                currentText = new StringBuilder();
-                lastEndedWithSentence = false;
+                // If last ended with sentence, allow extension up to 50% past boundary
+                double extensionLimit = windowEnd + segmentDurationSeconds * 0.5;
+                if (lastEndedWithSentence && start < extensionLimit) {
+                    // Extend - keep accumulating text
+                } else {
+                    // Emit segment
+                    TranscriptSegment segment = new TranscriptSegment(
+                        formatTime(currentWindowStart),
+                        currentWindowStart,
+                        windowEnd,
+                        currentText.toString().trim()
+                    );
+                    segments.add(segment);
+                    
+                    currentWindowStart = windowEnd;
+                    windowEnd = currentWindowStart + segmentDurationSeconds;
+                    currentText = new StringBuilder();
+                    lastEndedWithSentence = false;
+                }
             }
 
             // Only append if we didn't split above
