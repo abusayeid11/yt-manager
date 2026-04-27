@@ -49,6 +49,13 @@ source venv/bin/activate  # Linux/Mac
 pip install -r requirements.txt
 ```
 
+**Note:** For semantic segmentation, obtain a Gemini API key from [Google AI Studio](https://aistudio.google.com/) and add it to `scripts/.env`:
+```
+GEMINI_API_KEY=your_api_key_here
+```
+
+If `GEMINI_API_KEY` is not set, semantic segmentation will return empty results.
+
 ## Environment Variables
 
 Copy `.env.example` to `.env` and configure as needed:
@@ -66,6 +73,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/api/v1/transcript` | Get transcript for a YouTube video |
+| POST | `/api/v1/transcript/semantic` | Get AI-generated semantic segments (requires Gemini API key) |
 
 ### Request
 
@@ -123,8 +131,62 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 | `end` | double | End time in seconds |
 | `text` | string | Grouped transcript text |
 
+### Semantic Segmentation Endpoint
+
+```json
+POST /api/v1/transcript/semantic
+{
+  "url": "https://www.youtube.com/watch?v=VIDEO_ID"
+}
+```
+
+**Request Fields:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `url` | string | Yes | YouTube URL or video ID |
+
+**Response:**
+```json
+{
+  "videoId": "VIDEO_ID",
+  "segments": [
+    {
+      "startTime": "0:00",
+      "start": 0.0,
+      "end": 120.5,
+      "text": "Hello everyone... Welcome to this video...",
+      "title": "Introduction"
+    },
+    {
+      "startTime": "2:00",
+      "start": 120.5,
+      "end": 300.0,
+      "text": "Today we're discussing...",
+      "title": "Main Topic"
+    }
+  ]
+}
+```
+
+**Response Fields:**
+| Field | Type | Description |
+|-------|------|-------------|
+| `videoId` | string | YouTube video ID |
+| `segments` | array | AI-generated semantic segments with titles |
+
+**Semantic Segment Fields:**
+| Field | Type | Description |
+|-------|------|-------------|
+| `startTime` | string | Formatted start time |
+| `start` | double | Start time in seconds |
+| `end` | double | End time in seconds |
+| `text` | string | Grouped transcript text |
+| `title` | string | AI-generated chapter title |
+
+**Note:** If `GEMINI_API_KEY` is not set or invalid, `segments` will be empty.
+
 ## Tech Stack
 
 - **Backend**: Spring Boot 3.4, Java 21
 - **Frontend**: Next.js 16, React 19, Tailwind CSS 4
-- **Scraper**: Python, youtube-transcript-api
+- **Scraper**: Python, youtube-transcript-api, google-generativeai

@@ -15,14 +15,22 @@ interface TranscriptSegment {
   text: string;
 }
 
+interface SemanticSegment {
+  startTime: string;
+  start: number;
+  end: number;
+  text: string;
+  title: string;
+}
+
 const SENTENCE_END = /[.!?]+\s*$/;
 
 const isSentenceEnd = (text: string): boolean => {
   if (!text) return false;
   const trimmed = text.trim();
-  return SENTENCE_END.test(trimmed) || 
-         trimmed.endsWith(".") || 
-         trimmed.endsWith("!") || 
+  return SENTENCE_END.test(trimmed) ||
+         trimmed.endsWith(".") ||
+         trimmed.endsWith("!") ||
          trimmed.endsWith("?");
 };
 
@@ -31,8 +39,11 @@ export default function Home() {
   const [transcript, setTranscript] = useState("");
   const [snippets, setSnippets] = useState<TranscriptSnippet[]>([]);
   const [segments, setSegments] = useState<TranscriptSegment[]>([]);
+  const [semanticSegments, setSemanticSegments] = useState<SemanticSegment[]>([]);
   const [segmentDuration, setSegmentDuration] = useState(60);
+  const [segmentType, setSegmentType] = useState<"basic" | "semantic">("basic");
   const [loading, setLoading] = useState(false);
+  const [semanticLoading, setSemanticLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleSubmit = async (e: FormEvent) => {
@@ -44,12 +55,14 @@ export default function Home() {
     setTranscript("");
     setSnippets([]);
     setSegments([]);
+    setSemanticSegments([]);
+    setSegmentType("basic");
 
     try {
       const response = await fetch("/api/v1/transcript", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           url,
           segmentationType: "TIMESTAMP",
           segmentDuration: segmentDuration
@@ -71,6 +84,31 @@ export default function Home() {
     }
   };
 
+  const fetchSemanticSegments = async () => {
+    if (!url.trim()) return;
+
+    setSemanticLoading(true);
+    try {
+      const response = await fetch("/api/v1/transcript/semantic", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch semantic segments");
+      }
+
+      const data = await response.json();
+      setSemanticSegments(data.segments || []);
+      setSegmentType("semantic");
+    } catch (err) {
+      setError("Failed to generate semantic segmentation. Check GEMINI_API_KEY is set.");
+    } finally {
+      setSemanticLoading(false);
+    }
+  };
+
   const applySegmentation = (duration?: number) => {
     if (snippets.length === 0) return;
 
@@ -84,21 +122,17 @@ export default function Home() {
     for (const snippet of snippets) {
       const startSec = snippet.start;
 
-      // Check boundary BEFORE appending current snippet
       if (startSec >= windowEnd && currentText) {
-        // If last ended with sentence, allow extension up to 50% past boundary
         const extensionLimit = windowEnd + dur * 0.5;
         if (lastEndedWithSentence && startSec < extensionLimit) {
-          // Extend - keep accumulating text
         } else {
-          // Emit segment
           newSegments.push({
             startTime: formatTime(currentStart),
             start: currentStart,
             end: windowEnd,
             text: currentText.trim()
           });
-          
+
           currentStart = windowEnd;
           windowEnd = currentStart + dur;
           currentText = "";
@@ -106,12 +140,10 @@ export default function Home() {
         }
       }
 
-      // Only append if we didn't split above
       if (currentText) currentText += " ";
       currentText += snippet.text;
       lastEndedWithSentence = isSentenceEnd(snippet.text);
 
-      // Check forced split at 80% relative to current window start
       const forcedSplitThreshold = currentStart + dur * 0.8;
       if (startSec >= forcedSplitThreshold && currentText) {
         newSegments.push({
@@ -120,14 +152,13 @@ export default function Home() {
           end: windowEnd,
           text: currentText.trim()
         });
-        
+
         currentStart = windowEnd;
         windowEnd = currentStart + dur;
         currentText = "";
         lastEndedWithSentence = false;
       }
 
-      // Handle large gaps: advance window in loop until it contains the snippet start
       while (startSec >= windowEnd && currentText) {
         newSegments.push({
           startTime: formatTime(currentStart),
@@ -135,7 +166,7 @@ export default function Home() {
           end: windowEnd,
           text: currentText.trim()
         });
-        
+
         currentStart = windowEnd;
         windowEnd = currentStart + dur;
         currentText = "";
@@ -162,10 +193,15 @@ export default function Home() {
   };
 
   const copyToClipboard = () => {
-    const text = segments.length > 0
-      ? segments.map(s => `${s.startTime}\n${s.text}`).join("\n\n")
-      : transcript;
-    navigator.clipboard.writeText(text);
+    if (segmentType === "semantic" && semanticSegments.length > 0) {
+      const text = semanticSegments.map(s => `${s.startTime} - ${s.title}\n${s.text}`).join("\n\n");
+      navigator.clipboard.writeText(text);
+    } else {
+      const text = segments.length > 0
+        ? segments.map(s => `${s.startTime}\n${s.text}`).join("\n\n")
+        : transcript;
+      navigator.clipboard.writeText(text);
+    }
   };
 
   return (
@@ -196,7 +232,7 @@ export default function Home() {
           <p className="text-red-600 text-center mb-4">{error}</p>
         )}
 
-        {(transcript || segments.length > 0) && (
+        {(transcript || segments.length > 0 || semanticSegments.length > 0) && (
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-2">
@@ -214,6 +250,29 @@ export default function Home() {
                   <option value={60}>60s</option>
                   <option value={90}>90s</option>
                 </select>
+                <div className="flex gap-1 ml-2">
+                  <button
+                    onClick={() => setSegmentType("basic")}
+                    className={`px-3 py-1 text-sm rounded border ${
+                      segmentType === "basic"
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-white text-zinc-600 border-zinc-300 hover:bg-zinc-50"
+                    }`}
+                  >
+                    Basic
+                  </button>
+                  <button
+                    onClick={fetchSemanticSegments}
+                    disabled={semanticLoading || !url.trim()}
+                    className={`px-3 py-1 text-sm rounded border ${
+                      segmentType === "semantic"
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-white text-zinc-600 border-zinc-300 hover:bg-zinc-50 disabled:opacity-50"
+                    }`}
+                  >
+                    {semanticLoading ? "AI..." : "Semantic"}
+                  </button>
+                </div>
               </div>
               <button
                 onClick={copyToClipboard}
@@ -224,7 +283,19 @@ export default function Home() {
             </div>
 
             <div className="space-y-6">
-              {segments.length > 0 ? (
+              {segmentType === "semantic" && semanticSegments.length > 0 ? (
+                semanticSegments.map((segment, index) => (
+                  <section key={index}>
+                    <div className="flex items-center gap-2">
+                      <span className="text-blue-600 font-medium">[{segment.startTime}]</span>
+                      <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-sm font-medium">
+                        {segment.title}
+                      </span>
+                    </div>
+                    <p className="text-zinc-700 mt-1 leading-7">{segment.text}</p>
+                  </section>
+                ))
+              ) : segments.length > 0 ? (
                 segments.map((segment, index) => (
                   <section key={index}>
                     <span className="text-blue-600 font-medium">[{segment.startTime}]</span>

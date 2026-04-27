@@ -2,7 +2,6 @@ package com.ytmanager.controller;
 
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,19 +15,21 @@ import com.ytmanager.dto.TranscriptRequest;
 import com.ytmanager.dto.TranscriptResponse;
 import com.ytmanager.dto.TranscriptSegment;
 import com.ytmanager.dto.TranscriptSnippet;
-import com.ytmanager.service.TranscriptService;
+import com.ytmanager.service.PythonExecutionService;
+import com.ytmanager.service.TranscriptProcessor;
+import com.ytmanager.util.YoutubeUtils;
 
 @RestController
 @RequestMapping("/api/v1")
 public class TranscriptController {
 
     private static final Logger logger = LoggerFactory.getLogger(TranscriptController.class);
-    private final TranscriptService transcriptService;
+    private final PythonExecutionService pythonExecutionService;
+    private final TranscriptProcessor transcriptProcessor;
 
-    private static final Pattern VIDEO_ID_PATTERN = Pattern.compile("[a-zA-Z0-9_-]{11}");
-
-    public TranscriptController(TranscriptService transcriptService) {
-        this.transcriptService = transcriptService;
+    public TranscriptController(PythonExecutionService pythonExecutionService, TranscriptProcessor transcriptProcessor) {
+        this.pythonExecutionService = pythonExecutionService;
+        this.transcriptProcessor = transcriptProcessor;
     }
 
     @PostMapping("/transcript")
@@ -41,7 +42,7 @@ public class TranscriptController {
             return ResponseEntity.badRequest().build();
         }
 
-        String videoId = extractVideoId(url);
+        String videoId = YoutubeUtils.extractVideoId(url);
         if (videoId == null) {
             logger.warn("Could not extract video ID from: {}", url);
             return ResponseEntity.badRequest().build();
@@ -50,20 +51,20 @@ public class TranscriptController {
         logger.info("Extracted video ID: {}", videoId);
 
         try {
-            String jsonResponse = transcriptService.executeScraper(url);
+            String jsonResponse = pythonExecutionService.executeScraper(url);
             logger.info("Got transcript JSON, length: {}", jsonResponse.length());
-            
-            List<Map<String, Object>> rawSnippets = transcriptService.parseTranscriptJson(jsonResponse);
-            String rawText = transcriptService.getRawText(rawSnippets);
-            List<TranscriptSnippet> snippets = transcriptService.createSnippets(rawSnippets);
+
+            List<Map<String, Object>> rawSnippets = transcriptProcessor.parseTranscriptJson(jsonResponse);
+            String rawText = transcriptProcessor.getRawText(rawSnippets);
+            List<TranscriptSnippet> snippets = transcriptProcessor.createSnippets(rawSnippets);
             logger.info("Created {} snippets", snippets.size());
-            
+
             String segmentationType = request.getSegmentationType();
             List<TranscriptSegment> segments = null;
-            
+
             if ("TIMESTAMP".equals(segmentationType)) {
                 int duration = request.getSegmentDuration() != null ? request.getSegmentDuration() : 60;
-                segments = transcriptService.createSentenceAwareSegments(rawSnippets, duration);
+                segments = transcriptProcessor.createSentenceAwareSegments(rawSnippets, duration);
                 logger.info("Created {} sentence-aware segments", segments.size());
             }
             
@@ -73,25 +74,5 @@ public class TranscriptController {
             logger.error("Error executing scraper: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().build();
         }
-    }
-
-    private String extractVideoId(String input) {
-        if (VIDEO_ID_PATTERN.matcher(input).matches()) {
-            return input;
-        }
-
-        String[] patterns = {
-            "v=([a-zA-Z0-9_-]{11})",
-            "youtu\\.be/([a-zA-Z0-9_-]{11})",
-            "embed/([a-zA-Z0-9_-]{11})"
-        };
-
-        for (String pattern : patterns) {
-            java.util.regex.Matcher matcher = Pattern.compile(pattern).matcher(input);
-            if (matcher.find()) {
-                return matcher.group(1);
-            }
-        }
-        return null;
     }
 }

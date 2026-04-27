@@ -45,6 +45,7 @@ logs/
 .env
 .env.local
 *.local
+scripts/.env
 
 # Backend
 backend-api/src/main/resources/application.properties
