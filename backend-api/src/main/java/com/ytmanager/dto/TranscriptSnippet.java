@@ -3,13 +3,15 @@ package com.ytmanager.dto;
 public class TranscriptSnippet {
     private String startTime;
     private Double start;
+    private Double duration;
     private String text;
 
     public TranscriptSnippet() {}
 
-    public TranscriptSnippet(String startTime, Double start, String text) {
+    public TranscriptSnippet(String startTime, Double start, Double duration, String text) {
         this.startTime = startTime;
         this.start = start;
+        this.duration = duration;
         this.text = text;
     }
 
@@ -27,6 +29,14 @@ public class TranscriptSnippet {
 
     public void setStart(Double start) {
         this.start = start;
+    }
+
+    public Double getDuration() {
+        return duration;
+    }
+
+    public void setDuration(Double duration) {
+        this.duration = duration;
     }
 
     public String getText() {

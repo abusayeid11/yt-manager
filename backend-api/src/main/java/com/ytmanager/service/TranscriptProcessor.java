@@ -52,8 +52,9 @@ public class TranscriptProcessor {
 
         for (Map<String, Object> raw : rawSnippets) {
             Double start = (Double) raw.get("start");
+            Double duration = (Double) raw.get("duration");
             String text = (String) raw.get("text");
-            snippets.add(new TranscriptSnippet(formatTime(start), start, text));
+            snippets.add(new TranscriptSnippet(formatTime(start), start, duration, text));
         }
 
         return snippets;
