@@ -3,7 +3,6 @@ package com.ytmanager.service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,10 +16,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Service
 public class SemanticService {
 
-    private static final Logger logger = LoggerFactory.getLogger(SemanticService.class);
+private static final Logger logger = LoggerFactory.getLogger(SemanticService.class);
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final PythonExecutionService pythonExecutionService;
-    private static final Pattern SENTENCE_END = Pattern.compile("[.!?]+\\s*$");
 
     public SemanticService(PythonExecutionService pythonExecutionService) {
         this.pythonExecutionService = pythonExecutionService;

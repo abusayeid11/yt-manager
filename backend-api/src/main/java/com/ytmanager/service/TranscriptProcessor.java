@@ -79,10 +79,12 @@ public class TranscriptProcessor {
         double currentWindowStart = 0.0;
         StringBuilder currentText = new StringBuilder();
         double windowEnd = segmentDurationSeconds;
+        double currentTextEnd = segmentDurationSeconds;
         boolean lastEndedWithSentence = false;
 
         for (Map<String, Object> snippet : snippets) {
             double start = (Double) snippet.get("start");
+            double duration = (Double) snippet.get("duration");
             String text = (String) snippet.get("text");
 
             if (start >= windowEnd && currentText.length() > 0) {
@@ -92,13 +94,14 @@ public class TranscriptProcessor {
                     TranscriptSegment segment = new TranscriptSegment(
                         formatTime(currentWindowStart),
                         currentWindowStart,
-                        windowEnd,
+                        currentTextEnd,
                         currentText.toString().trim()
                     );
                     segments.add(segment);
 
                     currentWindowStart = windowEnd;
                     windowEnd = currentWindowStart + segmentDurationSeconds;
+                    currentTextEnd = windowEnd;
                     currentText = new StringBuilder();
                     lastEndedWithSentence = false;
                 }
@@ -108,6 +111,7 @@ public class TranscriptProcessor {
                 currentText.append(" ");
             }
             currentText.append(text);
+            currentTextEnd = start + duration;
             lastEndedWithSentence = isSentenceEnd(text);
 
             double forcedSplitThreshold = currentWindowStart + segmentDurationSeconds * 0.8;
@@ -115,13 +119,14 @@ public class TranscriptProcessor {
                 TranscriptSegment segment = new TranscriptSegment(
                     formatTime(currentWindowStart),
                     currentWindowStart,
-                    windowEnd,
+                    currentTextEnd,
                     currentText.toString().trim()
                 );
                 segments.add(segment);
 
                 currentWindowStart = windowEnd;
                 windowEnd = currentWindowStart + segmentDurationSeconds;
+                currentTextEnd = windowEnd;
                 currentText = new StringBuilder();
                 lastEndedWithSentence = false;
             }
@@ -130,13 +135,14 @@ public class TranscriptProcessor {
                 TranscriptSegment segment = new TranscriptSegment(
                     formatTime(currentWindowStart),
                     currentWindowStart,
-                    windowEnd,
+                    currentTextEnd,
                     currentText.toString().trim()
                 );
                 segments.add(segment);
 
                 currentWindowStart = windowEnd;
                 windowEnd = currentWindowStart + segmentDurationSeconds;
+                currentTextEnd = windowEnd;
                 currentText = new StringBuilder();
                 lastEndedWithSentence = false;
             }
@@ -146,7 +152,7 @@ public class TranscriptProcessor {
             TranscriptSegment segment = new TranscriptSegment(
                 formatTime(currentWindowStart),
                 currentWindowStart,
-                windowEnd,
+                currentTextEnd,
                 currentText.toString().trim()
             );
             segments.add(segment);

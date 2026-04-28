@@ -5,6 +5,7 @@ import { useState, FormEvent } from "react";
 interface TranscriptSnippet {
   startTime: string;
   start: number;
+  duration?: number;
   text: string;
 }
 
@@ -117,10 +118,12 @@ export default function Home() {
     let currentStart = 0;
     let currentText = "";
     let windowEnd = dur;
+    let textEnd = dur;
     let lastEndedWithSentence = false;
 
     for (const snippet of snippets) {
       const startSec = snippet.start;
+      const snippetDuration = snippet.duration || 0;
 
       if (startSec >= windowEnd && currentText) {
         const extensionLimit = windowEnd + dur * 0.5;
@@ -129,12 +132,13 @@ export default function Home() {
           newSegments.push({
             startTime: formatTime(currentStart),
             start: currentStart,
-            end: windowEnd,
+            end: textEnd,
             text: currentText.trim()
           });
 
           currentStart = windowEnd;
           windowEnd = currentStart + dur;
+          textEnd = windowEnd;
           currentText = "";
           lastEndedWithSentence = false;
         }
@@ -142,6 +146,7 @@ export default function Home() {
 
       if (currentText) currentText += " ";
       currentText += snippet.text;
+      textEnd = startSec + snippetDuration;
       lastEndedWithSentence = isSentenceEnd(snippet.text);
 
       const forcedSplitThreshold = currentStart + dur * 0.8;
@@ -149,12 +154,13 @@ export default function Home() {
         newSegments.push({
           startTime: formatTime(currentStart),
           start: currentStart,
-          end: windowEnd,
+          end: textEnd,
           text: currentText.trim()
         });
 
         currentStart = windowEnd;
         windowEnd = currentStart + dur;
+        textEnd = windowEnd;
         currentText = "";
         lastEndedWithSentence = false;
       }
@@ -163,12 +169,13 @@ export default function Home() {
         newSegments.push({
           startTime: formatTime(currentStart),
           start: currentStart,
-          end: windowEnd,
+          end: textEnd,
           text: currentText.trim()
         });
 
         currentStart = windowEnd;
         windowEnd = currentStart + dur;
+        textEnd = windowEnd;
         currentText = "";
         lastEndedWithSentence = false;
       }
@@ -178,7 +185,7 @@ export default function Home() {
       newSegments.push({
         startTime: formatTime(currentStart),
         start: currentStart,
-        end: windowEnd,
+        end: textEnd,
         text: currentText.trim()
       });
     }
