@@ -1,0 +1,130 @@
+# Feature Plan - Next Phase Implementation
+
+## Priority 1: Core Enhancements
+
+### 1. Video Metadata
+- Fetch video title, channel name, thumbnail, view count, upload date
+- Display alongside transcript
+- Low effort, high value
+
+### 2. Multiple Export Formats
+- Export to SRT (SubRip subtitle format)
+- Export to VTT (WebVTT)
+- Export to TXT (plain text)
+- Export to JSON
+- Download button in UI
+
+### 3. Search Within Transcript
+- Search bar to find keywords
+- Highlight matching snippets
+- Navigate between matches
+
+---
+
+## Priority 2: User Experience
+
+### 4. Transcript Editing
+- Allow users to correct/edit transcript text
+- Save edits locally (localStorage)
+
+### 5. Clickable Timestamps
+- Click timestamp to open YouTube at that point
+- youtube.com/watch?v=ID&t=seconds
+
+### 6. Copy Individual Segments
+- Copy button per segment
+-而不是 copy all
+
+---
+
+## Priority 3: Advanced Features
+
+### 7. Batch Processing
+- Process multiple videos in one request
+- Queue management
+- Progress tracking
+
+### 8. Bookmarks/Favorites
+- Save favorite transcripts to localStorage
+- Organize by video/channel
+
+### 9. Caching
+- Cache transcripts to reduce YouTube API calls
+- Store in local database or file
+
+### 10. Authentication
+- User login/signup
+- Cloud save preferences
+- History tracking
+
+---
+
+## Priority 4: AI Enhancements
+
+### 11. Summary Generation
+- Use Gemini to generate video summary
+- Display as introduction
+
+### 12. Key Topics Extraction
+- Extract key topics/entities
+- Display as tags/bullets
+
+### 13. Q&A Generation
+- Generate questions from content
+- Quiz generation from video
+
+---
+
+## Implementation Order
+
+| Phase | Features |
+|-------|----------|
+| Phase 1 | Video Metadata, Export Formats, Search |
+| Phase 2 | Clickable Timestamps, Copy Individual, Editing |
+| Phase 3 | Caching, Bookmarks |
+| Phase 4 | Summary, Topics, Q&A |
+
+---
+
+## Technical Notes
+
+### Video Metadata API
+- Use oEmbed or Invidious API
+- Endpoint: https://noembed.com/embed?url=VIDEO_URL
+- Or YouTube Data API v3 (requires key)
+
+### Export Formats
+
+SRT format:
+```
+1
+00:00:00,000 --> 00:00:05,000
+First line of text
+
+2
+00:00:05,000 --> 00:00:10,000
+Second line of text
+```
+
+VTT format:
+```
+WEBVTT
+
+00:00:00.000 --> 00:00:05.000
+First line of text
+
+00:00:05.000 --> 00:00:10.000
+Second line of text
+```
+
+### Clickable YouTube Links
+- Format: https://www.youtube.com/watch?v={videoId}&t={seconds}
+- Convert start time to seconds for the URL
+
+---
+
+## Resources Needed
+
+- YouTube Data API key (for metadata) - optional
+- Additional storage (localStorage or database)
+- UI components for export/search

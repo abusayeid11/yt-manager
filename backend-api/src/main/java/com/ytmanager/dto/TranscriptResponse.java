@@ -7,6 +7,7 @@ public class TranscriptResponse {
     private String rawText;
     private List<TranscriptSnippet> snippets;
     private List<TranscriptSegment> segments;
+    private VideoMetadata metadata;
 
     public TranscriptResponse() {}
 
@@ -21,6 +22,14 @@ public class TranscriptResponse {
         this.rawText = rawText;
         this.snippets = snippets;
         this.segments = segments;
+    }
+
+    public TranscriptResponse(String videoId, String rawText, List<TranscriptSnippet> snippets, List<TranscriptSegment> segments, VideoMetadata metadata) {
+        this.videoId = videoId;
+        this.rawText = rawText;
+        this.snippets = snippets;
+        this.segments = segments;
+        this.metadata = metadata;
     }
 
     public String getVideoId() {
@@ -53,5 +62,13 @@ public class TranscriptResponse {
 
     public void setSegments(List<TranscriptSegment> segments) {
         this.segments = segments;
+    }
+
+    public VideoMetadata getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(VideoMetadata metadata) {
+        this.metadata = metadata;
     }
 }

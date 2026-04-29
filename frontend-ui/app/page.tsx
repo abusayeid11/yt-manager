@@ -24,6 +24,14 @@ interface SemanticSegment {
   title: string;
 }
 
+interface VideoMetadata {
+  videoId: string;
+  title: string;
+  channelName: string;
+  channelUrl: string;
+  thumbnailUrl: string;
+}
+
 const SENTENCE_END = /[.!?]+\s*$/;
 
 const isSentenceEnd = (text: string): boolean => {
@@ -41,6 +49,7 @@ export default function Home() {
   const [snippets, setSnippets] = useState<TranscriptSnippet[]>([]);
   const [segments, setSegments] = useState<TranscriptSegment[]>([]);
   const [semanticSegments, setSemanticSegments] = useState<SemanticSegment[]>([]);
+  const [videoMetadata, setVideoMetadata] = useState<VideoMetadata | null>(null);
   const [segmentDuration, setSegmentDuration] = useState(60);
   const [segmentType, setSegmentType] = useState<"basic" | "semantic">("basic");
   const [loading, setLoading] = useState(false);
@@ -57,6 +66,7 @@ export default function Home() {
     setSnippets([]);
     setSegments([]);
     setSemanticSegments([]);
+    setVideoMetadata(null);
     setSegmentType("basic");
 
     try {
@@ -78,6 +88,7 @@ export default function Home() {
       setTranscript(data.rawText || "");
       setSnippets(data.snippets || []);
       setSegments(data.segments || []);
+      setVideoMetadata(data.metadata || null);
     } catch (err) {
       setError("Could not fetch transcript. Make sure the backend is running.");
     } finally {
@@ -241,6 +252,33 @@ export default function Home() {
 
         {(transcript || segments.length > 0 || semanticSegments.length > 0) && (
           <div className="bg-white rounded-lg shadow-md p-6">
+            {videoMetadata && (
+              <div className="flex items-start gap-4 mb-6 pb-4 border-b border-zinc-200">
+                {videoMetadata.thumbnailUrl && (
+                  <img 
+                    src={videoMetadata.thumbnailUrl} 
+                    alt={videoMetadata.title}
+                    className="w-40 h-24 object-cover rounded"
+                  />
+                )}
+                <div className="flex-1">
+                  <h2 className="text-lg font-semibold text-zinc-800 line-clamp-2">
+                    {videoMetadata.title}
+                  </h2>
+                  {videoMetadata.channelName && (
+                    <a 
+                      href={videoMetadata.channelUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-600 hover:underline"
+                    >
+                      {videoMetadata.channelName}
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-zinc-500">Segment:</span>

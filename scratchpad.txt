@@ -1,0 +1,144 @@
+# Project Details for Google AI Studio
+
+## Basic Information
+
+| Field | Value |
+|-------|-------|
+| Project Name | yt-manager (YouTube Transcript Manager) |
+| Latest Commit | 080f6f7 - Merge PR #1 |
+| Branch | feature/transcript-segmentation (merged to main) |
+| Total Files | ~106 source files |
+
+## Directory Structure
+
+yt-manager/
+├── backend-api/          # Spring Boot Java API
+├── frontend-ui/          # Next.js React frontend
+├── scripts/              # Python scraper
+├── README.md            # Documentation
+├── .gitignore
+└── .env.example
+
+## Technology Stack
+
+| Layer | Technology | Version |
+|-------|------------|---------|
+| Backend | Spring Boot | 3.4 |
+| Language | Java | 21 |
+| Frontend | Next.js | 16.2.4 |
+| UI Framework | React | 19.2.4 |
+| Styling | Tailwind CSS | 4 |
+| Scraper | Python | 3.9+ |
+| Transcript API | youtube-transcript-api | 0.6.3 |
+| AI Integration | google-generativeai | gemini-1.5-flash |
+
+## API Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| POST /api/v1/transcript | Get timestamp-based transcript segments |
+| POST /api/v1/transcript/semantic | Get AI-generated semantic chapters |
+
+## Request Format
+
+Regular Transcript:
+{
+  "url": "https://youtube.com/watch?v=VIDEO_ID",
+  "segmentationType": "TIMESTAMP",
+  "segmentDuration": 60
+}
+
+Semantic (AI):
+{
+  "url": "https://youtube.com/watch?v=VIDEO_ID"
+}
+
+## Response Structure
+
+Snippets (both endpoints):
+{
+  "snippets": [
+    {"startTime": "0:00", "start": 0.0, "duration": 5.0, "text": "..."}
+  ]
+}
+
+Segments (timestamp-based):
+{
+  "segments": [
+    {"startTime": "0:00", "start": 0.0, "end": 60.0, "text": "..."}
+  ]
+}
+
+Segments (semantic):
+{
+  "segments": [
+    {"startTime": "0:00", "start": 0.0, "end": 120.0, "text": "...", "title": "Introduction"}
+  ]
+}
+
+## Configuration
+
+| Variable | Location | Purpose |
+|----------|----------|---------|
+| GEMINI_API_KEY | scripts/.env | Gemini AI API key (gitignored) |
+| SERVER_PORT | .env.example | Backend port (default: 8080) |
+
+## Python Script Usage
+
+Regular transcript
+python scraper.py https://youtube.com/watch?v=VIDEO_ID
+
+With semantic segmentation
+python scraper.py https://youtube.com/watch?v=VIDEO_ID --semantic
+
+## Key Features Implemented
+
+1. Transcript Extraction
+   - Fetches YouTube video transcripts using youtube-transcript-api
+   - Supports various YouTube URL formats
+
+2. Timestamp-Based Segmentation
+   - Client-side re-segmentation with configurable duration (30s/60s/90s)
+   - Sentence-aware extension logic
+   - Accurate end timestamps using snippet duration
+
+3. Semantic Segmentation (AI-Powered)
+   - Uses Gemini 1.5 Flash for topic-based chapter detection
+   - Separate endpoint for on-demand AI processing
+   - Graceful degradation when API key not set
+
+4. Frontend UI
+   - Basic/Semantic toggle buttons
+   - Copy to clipboard functionality
+   - Visual chapter titles for semantic segments
+
+## Architecture
+
+Frontend (Next.js)
+  └── POST /api/v1/transcript or /transcript/semantic
+       ↓
+Backend Controller (Spring Boot)
+  ├── TranscriptController → PythonExecutionService → TranscriptProcessor
+  └── SemanticController → SemanticService → PythonExecutionService
+       ↓
+Python Scraper (scraper.py)
+  ├── youtube-transcript-api for transcripts
+  └── google-generativeai for semantic boundaries
+
+## Environment Setup
+
+Python:
+cd scripts
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+# Add GEMINI_API_KEY to scripts/.env
+
+Backend:
+cd backend-api
+mvn spring-boot:run
+
+Frontend:
+cd frontend-ui
+npm install
+npm run dev
