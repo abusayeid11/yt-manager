@@ -4,7 +4,7 @@ import json
 import os
 from dotenv import load_dotenv
 from youtube_transcript_api import YouTubeTranscriptApi
-from youtube_transcript_api._errors import TranscriptsDisabled, NoTranscriptFound
+from youtube_transcript_api._errors import TranscriptsDisabled, NoTranscriptFound, CouldNotRetrieveTranscript
 
 load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
 
@@ -29,22 +29,89 @@ class YouTubeScraper:
                 return match.group(1)
         raise ValueError("Invalid YouTube URL or Video ID")
 
-    def get_transcript(self, input_str: str) -> dict:
-        video_id = self.extract_video_id(input_str)
-
+    def probe_transcript_availability(self, video_id: str) -> dict:
+        print(f"DEBUG: probe_transcript_availability START for {video_id}", file=sys.stderr)
         try:
+            print("DEBUG: Creating YouTubeTranscriptApi", file=sys.stderr)
             api = YouTubeTranscriptApi()
-            transcript = api.fetch(video_id=video_id)
+
+            print("DEBUG: Calling api.list()", file=sys.stderr)
+            transcript_list = api.list(video_id=video_id)
+
+            print("DEBUG: api.list() returned, converting to list", file=sys.stderr)
+            available = list(transcript_list)
+
+            print(f"DEBUG: Found {len(available)} available transcripts", file=sys.stderr)
+            if not available:
+                return {"available": False, "error": "NO_TRANSCRIPTS", "message": "No transcripts available for this video"}
+
+            first_transcript = available[0]
+            print(f"DEBUG: Selected transcript: {first_transcript.language} ({first_transcript.language_code})", file=sys.stderr)
+
+            return {
+                "available": True,
+                "language": first_transcript.language,
+                "language_code": first_transcript.language_code,
+                "is_generated": first_transcript.is_generated,
+                "can_translate": first_transcript.is_translatable,
+                "transcript_object": first_transcript
+            }
+
         except TranscriptsDisabled:
-            print("ERROR: Transcripts are disabled for this video", file=sys.stderr)
-            sys.exit(1)
+            print("DEBUG: EXCEPTION - TranscriptsDisabled", file=sys.stderr)
+            return {"available": False, "error": "TRANSCRIPTS_DISABLED", "message": "Transcripts are disabled for this video"}
         except NoTranscriptFound:
-            print("ERROR: No transcript available for this video", file=sys.stderr)
-            sys.exit(2)
+            print("DEBUG: EXCEPTION - NoTranscriptFound", file=sys.stderr)
+            return {"available": False, "error": "NO_TRANSCRIPT_FOUND", "message": "No transcript found for this video"}
+        except CouldNotRetrieveTranscript as e:
+            print(f"DEBUG: EXCEPTION - CouldNotRetrieveTranscript: {e}", file=sys.stderr)
+            error_str = str(e).lower()
+            if "video unavailable" in error_str or "private" in error_str:
+                return {"available": False, "error": "VIDEO_UNAVAILABLE", "message": "Video is unavailable or private"}
+            elif "not accessible" in error_str or "region" in error_str:
+                return {"available": False, "error": "REGION_BLOCKED", "message": "Transcript not available in your region"}
+            return {"available": False, "error": "COULD_NOT_RETRIEVE", "message": str(e)}
         except Exception as e:
-            print(f"ERROR: {str(e)}", file=sys.stderr)
+            print(f"DEBUG: EXCEPTION - {type(e).__name__}: {e}", file=sys.stderr)
+            return {"available": False, "error": "PROBE_FAILED", "message": f"Probe failed: {str(e)}"}
+
+    def get_transcript(self, input_str: str) -> dict:
+        print(f"DEBUG: get_transcript START", file=sys.stderr)
+        video_id = self.extract_video_id(input_str)
+        print(f"DEBUG: Extracted video_id: {video_id}", file=sys.stderr)
+
+        print("DEBUG: Calling probe_transcript_availability", file=sys.stderr)
+        probe_result = self.probe_transcript_availability(video_id)
+        print("DEBUG: probe_transcript_availability COMPLETED", file=sys.stderr)
+
+        if not probe_result["available"]:
+            error = probe_result["error"]
+            message = probe_result["message"]
+
+            print(f"ERROR: {message}", file=sys.stderr)
+
+            error_codes = {
+                "VIDEO_UNAVAILABLE": 10,
+                "TRANSCRIPTS_DISABLED": 1,
+                "NO_TRANSCRIPT_FOUND": 2,
+                "NO_TRANSCRIPTS": 2,
+                "REGION_BLOCKED": 3,
+                "COULD_NOT_RETRIEVE": 4,
+                "PROBE_FAILED": 4
+            }
+            sys.exit(error_codes.get(error, 1))
+
+        transcript_obj = probe_result["transcript_object"]
+
+        print("DEBUG: Calling transcript_obj.fetch()", file=sys.stderr)
+        try:
+            transcript = transcript_obj.fetch()
+            print("DEBUG: fetch() COMPLETED", file=sys.stderr)
+        except Exception as e:
+            print(f"ERROR during fetch: {str(e)}", file=sys.stderr)
             sys.exit(1)
 
+        print(f"DEBUG: Processing {len(transcript)} snippets", file=sys.stderr)
         snippets = [
             {
                 "text": snippet.text,
@@ -53,6 +120,7 @@ class YouTubeScraper:
             }
             for snippet in transcript
         ]
+        print(f"DEBUG: Processed {len(snippets)} snippets, returning", file=sys.stderr)
 
         return {
             "videoId": video_id,
