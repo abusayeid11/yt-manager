@@ -235,7 +235,7 @@ export default function Home() {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="Enter YouTube URL or Video ID"
-            className="flex-1 px-4 py-3 rounded-lg border border-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 px-4 py-3 text-black rounded-lg border border-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button
             type="submit"
@@ -289,7 +289,7 @@ export default function Home() {
                     setSegmentDuration(newDuration);
                     if (snippets.length > 0) applySegmentation(newDuration);
                   }}
-                  className="px-2 py-1 text-sm rounded border border-zinc-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="px-2 py-1 text-sm rounded border border-zinc-300 focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
                 >
                   <option value={30}>30s</option>
                   <option value={60}>60s</option>
